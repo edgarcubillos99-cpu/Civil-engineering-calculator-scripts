@@ -7,7 +7,7 @@
 
 <p align="center">
   <img alt="Python" src="https://img.shields.io/badge/MicroPython-Casio%20FX--CG100-blue?logo=python&logoColor=white">
-  <img alt="Scripts" src="https://img.shields.io/badge/scripts-2-success">
+  <img alt="Scripts" src="https://img.shields.io/badge/scripts-3-success">
   <img alt="Temas" src="https://img.shields.io/badge/temas-canales%20%7C%20hidr%C3%A1ulica%20%7C%20estructuras-lightgrey">
 </p>
 
@@ -89,12 +89,13 @@ Los archivos se agrupan por tema, no por número de práctica. Así se pueden a�
 
 ```text
 scripts-para-la-u/
-├── README.md                 → esta documentación
-├── DISEÑO DE CANALES/        → flujo en canales abiertos
-│   ├── froude.py             → número de Froude y régimen del flujo
-│   └── E_especifica.py       → curva de energía específica (E-y)
-├── HIDRÁULICA/               → (próximos)
-└── ESTRUCTURAS/              → (próximos)
+├── README.md                   → esta documentación
+├── DISEÑO DE CANALES/          → flujo en canales abiertos
+│   ├── froude.py               → número de Froude y régimen del flujo
+│   └── E_especifica.py         → curva de energía específica (E-y)
+├── DISEÑO DE ESTRUCTURAS/      → acero de refuerzo en vigas
+│   └── barras.py               → consulta ASTM y config. económica
+└── HIDRÁULICA/                 → (próximos)
 ```
 
 Nombres de archivo en `snake_case`, en minúsculas, con extensión `.py`.
@@ -107,6 +108,7 @@ Nombres de archivo en `snake_case`, en minúsculas, con extensión `.py`.
 |---------|-----------|----------------|
 | 🌊 Diseño de canales | [`froude.py`](DISEÑO%20DE%20CANALES/froude.py) | Número de Froude y régimen del flujo (subcrítico / crítico / supercrítico) para sección rectangular, trapezoidal, triangular o circular |
 | 🌊 Diseño de canales | [`E_especifica.py`](DISEÑO%20DE%20CANALES/E_especifica.py) | Tabla de energía específica `E` frente al tirante `y` (curva E–y) para sección rectangular, trapezoidal, triangular o circular |
+| 🏛️ Diseño de estructuras | [`barras.py`](DISEÑO%20DE%20ESTRUCTURAS/barras.py) | Consulta de barras ASTM y configuración económica de refuerzo a flexión: cubre el `As` mínimo con el menor peso |
 
 ---
 
@@ -158,6 +160,31 @@ Después pide el **rango de la gráfica**: tirante inicial `y`, tirante final y 
 
 > [!NOTE]
 > En la calculadora el nombre supera 8 caracteres: al copiarlo a la raíz, renómbralo a algo corto (`energia.py`, `Espec.py`).
+
+<br>
+
+### 🏛️ `barras.py` — Acero de refuerzo (vigas)
+
+Consulta la tabla ASTM de barras (diámetro en octavos de pulgada) o busca la **configuración más económica** para un `As` de diseño y un número de barras: la que cubre el área mínima y pesa menos (el acero se cotiza por kg/m).
+
+> [!WARNING]
+> No verifica separación, recubrimiento, capas ni longitud de desarrollo. Mezcla como máximo dos diámetros. En la configuración no usa `#2` (estribos / temperatura).
+
+**📥 Datos según la opción**
+
+| Opción | Datos que pide |
+|--------|----------------|
+| 1. Consultar barra | Número de barra (`2`–`11`, `14`, `18`) |
+| 2. Config. optima | Área requerida `As` (mm²) y número de barras `n` |
+
+La opción 2 recorre combinaciones de **un solo diámetro** (`n` barras iguales) y de **dos diámetros** (`k` de un tamaño y `n − k` del otro). Descarta las que no llegan a `As` y ordena el resto así: menor masa; si empatan, un solo diámetro; luego diámetros más cercanos; luego menos excedente.
+
+**📤 Salida**
+
+- Opción 1: diámetro de referencia, `d` (mm), `As` (mm²), perímetro `P` (mm) y masa `m` (kg/m).
+- Opción 2: la combinación óptima y hasta dos alternativas, con `As` colocada, excedente `exc = As − As_req` y masa total `m` (kg/m).
+
+**🚧 Aviso:** si con `n` barras no se alcanza `As_req` (ni con `#18`), indica que hay que probar más barras.
 
 ---
 

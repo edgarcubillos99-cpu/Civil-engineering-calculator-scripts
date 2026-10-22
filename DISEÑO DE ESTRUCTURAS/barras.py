@@ -57,8 +57,8 @@ def config_optima(As_req, n):
         b = TABLA[IDX_VIGA[i]]
         As = n * b[3]
         if As >= As_req:
-            masa = n * b[5]
-            cands.append((masa, 1, 0, As, txt_cfg(n, b[0], 0, 0)))
+            masa = round(n * b[5], 4)
+            cands.append((masa, 1, 0.0, As, txt_cfg(n, b[0], 0, 0)))
         i = i + 1
 
     i = 0
@@ -67,12 +67,12 @@ def config_optima(As_req, n):
         j = i + 1
         while j < nv:
             b2 = TABLA[IDX_VIGA[j]]
-            spread = b2[2] - b1[2]
+            spread = round(b2[2] - b1[2], 2)
             k = 1
             while k < n:
                 As = k * b1[3] + (n - k) * b2[3]
                 if As >= As_req:
-                    masa = k * b1[5] + (n - k) * b2[5]
+                    masa = round(k * b1[5] + (n - k) * b2[5], 4)
                     cands.append((masa, 2, spread, As, txt_cfg(k, b1[0], n - k, b2[0])))
                 k = k + 1
             j = j + 1

@@ -134,7 +134,7 @@ Determina si el flujo en un canal es **subcrítico** (`Fr < 1`), **crítico** (`
 
 **📤 Salida:** área `A`, ancho superficial `T`, profundidad hidráulica `D = A/T`, velocidad `V = Q/A` y número de Froude `Fr = V / √(gD)` con `g = 9.81 m/s²`.
 
-**🚧 Aviso:** si en sección circular el tirante supera el diámetro, avisa de flujo a presión y termina.
+**🚧 Aviso:** si en sección circular el tirante iguala o supera el diámetro, avisa de flujo a presión y termina.
 
 <br>
 
@@ -206,7 +206,7 @@ En las opciones 1–3 puedes dar el momento `M` (kN·m) o poner `0` y el script 
 | Opción | Datos que pide |
 |--------|----------------|
 | 1. Diseñar `As` | `M` (o `w` y `L`), ancho `b` (m), peralte efectivo `d` (m) |
-| 2. Diseñar `d` (económica) | `M` (o `w` y `L`), `b` y recubrimiento `r` (m); usa `ρ_b` |
+| 2. Diseñar `d` (económica) | `M` (o `w` y `L`), `b` y recubrimiento al centroide `r` (m; `0` omite `h`); usa `ρ_b` |
 | 3. Revisar sección | `M` (o `w` y `L`), `b`, `d` y `As` (mm²) |
 | 4. Capacidad `Mr` | `b`, `d`, `As` (mm²) y `L` (m; `0` omite `w_max`) |
 
@@ -216,10 +216,10 @@ La opción 4 usa el `k` de la cuantía **real** `ρ = As/(b d)` (no el `k_b`) pa
 
 **📤 Salida**
 
-- Opción 1: `k`, `j`, `ρ`, `ρ_b`, tipo (subreforzado / balanceado / sobrereforzado) y `As` (mm²).
-- Opción 2: `d`, `h = d + r` si diste recubrimiento, `R = ½ fc k_b j_b` y `As`.
+- Opción 1: `k`, `j`, `ρ`, `ρ_b`, tipo (subreforzado / balanceado) y `As` (mm²).
+- Opción 2: `d`, `h = d + r` si diste recubrimiento al centroide (`d'`), `R = ½ fc k_b j_b` y `As`.
 - Opción 3: `Ms`, `Mc`, `M_all = min(Ms, Mc)`, esfuerzos reales `fs,r` y `fc,r` bajo `M`, y si **cumple**.
-- Opción 4: `k`, `j`, `kd`, tipo, `fc` si el acero llega a `fs`, `Ms`, `Mc`, `Mr` y `w_max` si hay `L`.
+- Opción 4: `k`, `j`, `kd`, tipo (subreforzado / balanceado / sobrereforzado), `fc` si el acero llega a `fs`, `Ms`, `Mc`, `Mr` y `w_max` si hay `L`.
 
 **🚧 Aviso:** si `M > M_max`, la opción 1 indica que no cabe como simplemente armada: hay que aumentar `b` o `d`. El momento se imprime en **kN·m** (no kN/m; eso es la carga `w`).
 

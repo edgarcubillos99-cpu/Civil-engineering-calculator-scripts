@@ -230,7 +230,7 @@ def op_revisar():
     print("Mall =", round(knm(Mall), 3), "kN.m")
     print("fs,r =", round(mpa(fs_r), 2), "MPa")
     print("fc,r =", round(mpa(fc_r), 2), "MPa")
-    if Mall + 0.5 >= M and fs_r <= fs * 1.001 and fc_r <= fc * 1.001:
+    if Mall * 1.001 >= M and fs_r <= fs * 1.001 and fc_r <= fc * 1.001:
         print("-> Cumple")
     else:
         print("-> No cumple")

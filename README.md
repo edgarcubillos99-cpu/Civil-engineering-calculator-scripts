@@ -20,7 +20,6 @@
 - 📐 [Requisitos y notas de uso](#-requisitos-y-notas-de-uso)
 - 📁 [Organización del repositorio](#-organización-del-repositorio)
 - 📚 [Catálogo de scripts](#-catálogo-de-scripts)
-- 📊 [Tablas y curvas en CSV para la calculadora](#-tablas-y-curvas-en-csv-para-la-calculadora)
 - 📌 [Descripción de scripts](#-descripción-de-scripts)
 - 💡 [Cómo añadir un script nuevo](#-cómo-añadir-un-script-nuevo)
 
@@ -99,7 +98,6 @@ scripts-para-la-u/
 │   ├── manning.py              → flujo uniforme por Manning paso a paso (b, yn, Q y relación Q-y)
 │   ├── discanal.py             → diseño de canales y bordes libres paso a paso (Velocidad Permisible, Sección Óptima y Fuerza Tractiva)
 │   ├── guiacan.py              → guía de procedimientos y tablas de diseño (Chow, USACE, Ranga Raju, Gupta, USBR)
-│   └── csv/                    → tablas y curvas de diseño para graficar en Spreadsheet y STAT
 │       ├── fig9_3.csv          → ángulo de reposo vs diámetro de partícula (USBR)
 │       ├── fig9_4.csv          → esfuerzo cortante admisible tau_p vs diámetro en no cohesivos (USBR)
 │       ├── fig9_5.csv          → esfuerzo cortante admisible tau_p vs relación de vacíos en cohesivos (USBR)
@@ -128,39 +126,6 @@ Nombres de archivo en `snake_case`, en minúsculas, con extensión `.py`.
 | 🌊 Diseño de canales | [`guiacan.py`](DISEÑO%20DE%20CANALES/guiacan.py) | Guía interactiva de procedimientos paso a paso y tablas de consulta: `n` de Manning (Tabla 4-1), bordes libres (Tabla 9-1), taludes (Tabla 9-2), velocidades máximas (Tabla 9-3), limo y esfuerzo cortante (Tabla 9-4 y Figs. 9-3 a 9-5) |
 | 🏛️ Diseño de estructuras | [`barras.py`](DISEÑO%20DE%20ESTRUCTURAS/barras.py) | Consulta de barras ASTM y configuración económica de refuerzo a flexión: cubre el `As` mínimo con el menor peso |
 | 🏛️ Diseño de estructuras | [`asdviga.py`](DISEÑO%20DE%20ESTRUCTURAS/asdviga.py) | Viga rectangular por ASD: `As` (Viète), sección económica, revisión, capacidad `Mr` y `w` de viga simple |
-
----
-
-## 📊 Tablas y curvas en CSV para la calculadora
-
-Los archivos `.csv` en [`DISEÑO DE CANALES/csv/`](DISEÑO%20DE%20CANALES/csv/) permiten visualizar, graficar y consultar las curvas experimentales de hidráulica directamente en las aplicaciones nativas de la **Casio FX-CG100** (`Spreadsheet` y `STAT`), superando la limitación de gráficos en MicroPython.
-
-### 📋 Catálogo de archivos CSV
-
-| Archivo | Qué contiene | Columnas principales |
-|---------|--------------|----------------------|
-| [`fig9_3.csv`](DISEÑO%20DE%20CANALES/csv/fig9_3.csv) | Ángulo de reposo $\phi$ vs diámetro $d$ (1 a 100 mm) | `d_mm`, `Muy_redond`, `Mod_redond`, `Lig_redond`, `Lig_angular`, `Mod_angular`, `Muy_angular` |
-| [`fig9_4.csv`](DISEÑO%20DE%20CANALES/csv/fig9_4.csv) | Esfuerzo cortante admisible $\tau_p$ vs diámetro $d$ (0.1 a 100 mm) | `d_mm`, `Agua_clara`, `Poco_sedim`, `Mucho_sedim` |
-| [`fig9_5.csv`](DISEÑO%20DE%20CANALES/csv/fig9_5.csv) | Esfuerzo cortante admisible $\tau_p$ vs relación de vacíos $e$ (0.2 a 2.0) | `e_vacios`, `Arc_arenosa`, `Arc_pesada`, `Arcilla`, `Arc_magra` |
-| [`tab4_1.csv`](DISEÑO%20DE%20CANALES/csv/tab4_1.csv) | Coeficientes $n$ de rugosidad de Manning (Chow, 1959) | `Material`, `n_manning` |
-| [`tab9_1.csv`](DISEÑO%20DE%20CANALES/csv/tab9_1.csv) | Borde libre recomendado según caudal $Q$ (Ranga Raju, 1983) | `Q_max_m3_s`, `Borde_libre_m` |
-| [`tab9_2.csv`](DISEÑO%20DE%20CANALES/csv/tab9_2.csv) | Taludes recomendados según tipo de suelo (Fortier & Scobey, 1926) | `Material`, `Talud_H_a_1V` |
-| [`tab9_3.csv`](DISEÑO%20DE%20CANALES/csv/tab9_3.csv) | Velocidades máximas permisibles según material (USACE, 1970) | `Material`, `V_max_m_s` |
-
-### 📈 Cómo cargarlos y graficarlos en la Casio FX-CG100
-
-1. **Copiar a la calculadora:** Conecta la calculadora por USB en modo **USB Flash Drive** y copia los archivos `.csv` a la **raíz** de la memoria de almacenamiento.
-2. **Abrir en `Spreadsheet` (Hoja de cálculo):**
-   - Abre la app **Spreadsheet** en el menú principal de la Casio.
-   - Presiona `FILE` (`F1`) $\rightarrow$ `CSV` $\rightarrow$ `Load` y selecciona el archivo (ej. `fig9_4.csv`).
-   - Verás las columnas de datos tabulados ordenadas.
-3. **Graficar directamente:**
-   - Selecciona el rango de celdas ($X$ y la columna de $Y$ que te interese graficar).
-   - Presiona `GRPH` (`F6`) $\rightarrow$ `Line` para trazar la curva en pantalla.
-4. **Pasar a la app `STAT`:**
-   - Desde Spreadsheet puedes copiar las columnas y pegarlas en `List 1` ($X$) y `List 2` ($Y$) del menú **STAT**.
-   - En `STAT`, pulsa `GRPH` (`F1`) $\rightarrow$ `GPH1` (tipo `xyLine`).
-   - Usa `CALC` $\rightarrow$ `Pwr` o `Log` para obtener la ecuación de regresión de la curva y evaluar cualquier punto intermedio.
 
 ---
 
@@ -278,7 +243,7 @@ Diseña la sección transversal completa de un canal (`b`, `y`, borde libre `BL`
 
 ### 🌊 `guiacan.py` — Guía de procedimientos y tablas de diseño
 
-Script interactivo de consulta rápida para llevar las **guías de procedimiento, fórmulas y tablas de los PDFs** directamente en la calculadora.
+Script interactivo de consulta rápida para llevar las **guías de procedimiento, fórmulas y tablas de los PDFs**
 
 **📋 Opciones de consulta**
 

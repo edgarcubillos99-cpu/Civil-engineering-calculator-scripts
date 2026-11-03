@@ -1,442 +1,208 @@
 import math
 
 # Diseno de canales en flujo uniforme
-# Incluye borde libre (Tabla 9-1 Ranga Raju),
-# numero de Froude y verificacion de Manning:
-# 1. Metodo Velocidad Maxima Permisible (PDF 1)
-# 2. Metodo Seccion Hidraulicamente Optima (Rect/Trap optimo)
-# 3. Metodo Esfuerzo Cortante / Fuerza Tractiva (PDF 2)
-
-FT_A_M = 0.3048
-FT3_A_M3 = 0.0283168466
+FT_M = 0.3048
+FT3_M3 = 0.0283168466
 G = 9.81
 
+def r4(x):
+    return round(x, 4)
 
-def borde_libre_ranga(Q_m3s):
-    # Tabla 9-1 (Ranga Raju, 1983)
-    if Q_m3s < 0.75:
-        return 0.45, "< 0.75 m3/s"
-    if Q_m3s < 1.50:
-        return 0.60, "0.75 a 1.5 m3/s"
-    if Q_m3s <= 85.0:
-        return 0.75, "1.5 a 85 m3/s"
-    return 0.90, "> 85 m3/s"
+def r2(x):
+    return round(x, 2)
 
-
-def regimen_froude(Fr):
-    if abs(Fr - 1.0) < 1e-4:
-        return "Critico (Fr = 1)"
-    if Fr < 1.0:
-        return "Subcritico (Fr < 1)"
-    return "Supercritico (Fr > 1)"
-
+def borde_libre(Q):
+    if Q < 0.75:
+        return 0.45
+    if Q < 1.50:
+        return 0.60
+    if Q <= 85.0:
+        return 0.75
+    return 0.90
 
 def geom_trap(b, y, m):
-    raiz = math.sqrt(1.0 + m * m)
+    rm = math.sqrt(1.0 + m * m)
     A = (b + m * y) * y
-    P = b + 2.0 * y * raiz
+    P = b + 2.0 * y * rm
     R = A / P
-    Z = A * (R ** (2.0 / 3.0))
-    return A, P, R, Z, raiz
+    return A, P, R, A * (R ** (2.0 / 3.0)), rm
 
-
-def resolver_b(Z_obj, y, m):
-    if m > 0:
-        z0 = geom_trap(0.0, y, m)[3]
-        if Z_obj <= z0:
-            return 0.0
-    b_inf = 1e-6
-    b_sup = 1.0
-    while geom_trap(b_sup, y, m)[3] < Z_obj:
-        b_sup = b_sup * 2.0
-        if b_sup > 1e6:
+def resolver_b(Z, y, m):
+    if m > 0 and Z <= geom_trap(0.0, y, m)[3]:
+        return 0.0
+    bi, bs = 1e-6, 1.0
+    while geom_trap(bs, y, m)[3] < Z:
+        bs = bs * 2.0
+        if bs > 1e6:
             return None
     i = 0
     while i < 60:
-        b_med = 0.5 * (b_inf + b_sup)
-        if geom_trap(b_med, y, m)[3] < Z_obj:
-            b_inf = b_med
+        bm = 0.5 * (bi + bs)
+        if geom_trap(bm, y, m)[3] < Z:
+            bi = bm
         else:
-            b_sup = b_med
+            bs = bm
         i = i + 1
-    return 0.5 * (b_inf + b_sup)
+    return 0.5 * (bi + bs)
 
+def fin_hidr(Q, n, S0, b, y, m, A, R, V, p_num):
+    T = b + 2.0 * m * y
+    D = A / T
+    Fr = V / math.sqrt(G * D)
+    Qv = (1.0 / n) * A * (R ** (2.0 / 3.0)) * math.sqrt(S0)
+    BL = borde_libre(Q)
+    H = y + BL
+    reg = "Subcritico (Fr<1)"
+    if abs(Fr - 1.0) < 1e-4:
+        reg = "Critico (Fr=1)"
+    elif Fr > 1.0:
+        reg = "Supercritico (Fr>1)"
+    print("\nPaso", p_num, ": Froude, Verif. y BL")
+    print("T = b + 2*z*y =", r4(T), "m (", r2(T), "m)")
+    print("D = A/T =", r4(D), "m, Fr =", r4(Fr))
+    print("Regimen:", reg, "\nQ verif =", r4(Qv), "m3/s")
+    print("BL (Tabla 9-1) =", r2(BL), "m, H =", r4(H), "m")
+    print("Ancho sup. total =", r4(b + 2.0 * m * H), "m")
 
 def op_vel_permisible():
-    print("")
-    print("=== 1. Vel. Max. Permisible ===")
-    print("Descripcion del ejercicio:")
-    print("Disena la seccion (b, y, T, BL, H)")
-    print("de un canal erosionable para que")
-    print("trabaje a la velocidad maxima")
-    print("permisible V (Guia PDF 1), y")
-    print("verifica Froude y Manning.")
-    print("-------------------------------")
-
-    unid = input("Unidades (1=SI m, 2=ft): ")
-    if unid not in ("1", "2"):
-        print("Opcion de unidad invalida.")
+    print("\n=== 1. Vel. Max. Permisible ===\nDisena b, y, T, BL y H (V <= Vmax).")
+    u = input("Unidades (1=SI m, 2=ft): ")
+    if u not in ("1", "2"):
+        print("Opcion invalida.")
         return
-
-    if unid == "1":
-        Q_in = float(input("Caudal Q (m3/s): "))
-        V_in = float(input("Vel. max V (m/s): "))
-        Q = Q_in
-        V = V_in
-    else:
-        Q_in = float(input("Caudal Q (ft3/s): "))
-        V_in = float(input("Vel. max V (ft/s): "))
-        Q = Q_in * FT3_A_M3
-        V = V_in * FT_A_M
-
+    Qi = float(input("Caudal Q: "))
+    Vi = float(input("Vel. max V: "))
+    Q, V = Qi, Vi
+    if u == "2":
+        Q, V = Qi * FT3_M3, Vi * FT_M
     n = float(input("Rugosidad n: "))
     S0 = float(input("Pendiente S0: "))
     m = float(input("Talud z o m [H:V]: "))
-
     if Q <= 0 or V <= 0 or n <= 0 or S0 <= 0 or m < 0:
         print("Datos invalidos.")
         return
-
-    raiz_m = math.sqrt(1.0 + m * m)
-    Cm = 2.0 * raiz_m - m
-
-    print("")
-    print("--- PROCEDIMIENTO (PDF 1) ---")
-    print("Paso 1: Parametros y unidades")
-    if unid == "2":
-        print("Convirtiendo de pies (ft) a SI:")
-        print("1 ft = 0.3048 m")
-        print("1 ft3/s = 0.028317 m3/s")
-        print("Q =", Q_in, "ft3/s =", round(Q, 4), "m3/s")
-        print("V =", V_in, "ft/s =", round(V, 4), "m/s")
-    else:
-        print("Q =", round(Q, 4), "m3/s, V =", round(V, 4), "m/s")
-    print("n =", n, ", S0 =", S0, ", z =", m)
-
-    # Paso 2: R por Manning y A por continuidad
-    R = ((V * n) / math.sqrt(S0)) ** 1.5
+    rm = math.sqrt(1.0 + m * m)
+    Cm = 2.0 * rm - m
     A = Q / V
-
-    print("")
-    print("Paso 2: Area A y Radio hidr. R")
-    print("De continuidad: A = Q / V")
-    print("A =", round(A, 4), "m2", end="")
-    if unid == "2":
-        print(" (", round(A / (FT_A_M * FT_A_M), 4), "ft2)")
-    else:
-        print("")
-    print("De Manning: V = (1/n)*R^(2/3)*S0^(1/2)")
-    print("R = (V * n / sqrt(S0))^(3/2)")
-    print("R =", round(R, 4), "m", end="")
-    if unid == "2":
-        print(" (", round(R / FT_A_M, 4), "ft)")
-    else:
-        print("")
-
-    # Paso 3: Perimetro mojado P
+    R = ((V * n) / math.sqrt(S0)) ** 1.5
     P = A / R
-    print("")
-    print("Paso 3: Perimetro mojado P")
-    print("P = A / R =", round(P, 4), "m", end="")
-    if unid == "2":
-        print(" (", round(P / FT_A_M, 4), "ft)")
-    else:
-        print("")
-
-    # Paso 4: Sistema A y P -> cuadratica en y
-    print("")
-    print("Paso 4: Despeje de tirante y y base b")
-    print("P = b + 2*y*sqrt(1+z^2)")
-    print("=> b = P -", round(2.0 * raiz_m, 4), "* y")
-    print("Sustituyendo b en A = (b + z*y)*y:")
-    print("Cm * y^2 - P * y + A = 0")
-    print("con Cm = 2*sqrt(1+z^2) - z =", round(Cm, 4))
-
+    print("\n--- PROCEDIMIENTO ---\nPaso 1: Parametros")
+    if u == "2":
+        print("1ft=0.3048m, 1ft3/s=0.028317m3/s")
+    print("Q =", r4(Q), "m3/s, V =", r4(V), "m/s\nPaso 2: A = Q/V =", r4(A), "m2")
+    print("R = (V*n/sqrt(S0))^(3/2) =", r4(R), "m\nPaso 3: P = A/R =", r4(P), "m")
+    if u == "2":
+        print("ft: A=", r4(Qi / Vi), "R=", r4(R / FT_M), "P=", r4(P / FT_M))
+    print("\nPaso 4: Sistema A y P (Cuadratica)")
+    print("b = P - 2*y*sqrt(1+z^2) = P -", r4(2.0 * rm), "* y")
     disc = P * P - 4.0 * Cm * A
-    print("Discriminante = P^2 - 4*Cm*A =", round(disc, 4))
+    print("Cm*y^2 - P*y + A = 0  (Cm =", r4(Cm), ")\nDisc = P^2 - 4*Cm*A =", r4(disc))
     if disc < 0:
-        print("Discriminante < 0: No existe")
-        print("seccion trapezoidal para ese R.")
-        print("Aumente z o reduzca V.")
+        print("Disc < 0: Aumente z o reduzca V.")
         return
-
-    raiz_d = math.sqrt(disc)
-    y1 = (P - raiz_d) / (2.0 * Cm)
-    b1 = P - 2.0 * y1 * raiz_m
-    y2 = (P + raiz_d) / (2.0 * Cm)
-    b2 = P - 2.0 * y2 * raiz_m
-
-    print("Raiz 1: y1 =", round(y1, 4), "m -> b1 =", round(b1, 4), "m")
-    print("Raiz 2: y2 =", round(y2, 4), "m -> b2 =", round(b2, 4), "m")
-
-    if b1 >= 0:
-        y_dis = y1
-        b_dis = b1
-    elif b2 >= 0:
-        y_dis = y2
-        b_dis = b2
-    else:
+    rd = math.sqrt(disc)
+    y1, y2 = (P - rd) / (2.0 * Cm), (P + rd) / (2.0 * Cm)
+    b1, b2 = P - 2.0 * y1 * rm, P - 2.0 * y2 * rm
+    print("Raiz 1: y1 =", r4(y1), "m -> b1 =", r4(b1), "m")
+    print("Raiz 2: y2 =", r4(y2), "m -> b2 =", r4(b2), "m")
+    yd, bd = y1, b1
+    if b1 < 0:
+        yd, bd = y2, b2
+    if bd < 0:
         print("Ambas raices dan b < 0.")
         return
-
-    print("Se adopta la raiz con b > 0:")
-    print("-> y =", round(y_dis, 4), "m (", round(y_dis, 2), "m)", end="")
-    if unid == "2":
-        print(" [", round(y_dis / FT_A_M, 4), "ft]")
-    else:
-        print("")
-    print("-> b =", round(b_dis, 4), "m (", round(b_dis, 2), "m)", end="")
-    if unid == "2":
-        print(" [", round(b_dis / FT_A_M, 4), "ft]")
-    else:
-        print("")
-
-    if unid == "2":
-        # Nota usando ku = 1.49 directo en pies
-        R_ft = ((V_in * n) / (1.49 * math.sqrt(S0))) ** 1.5
-        A_ft = Q_in / V_in
-        P_ft = A_ft / R_ft
-        d_ft = P_ft * P_ft - 4.0 * Cm * A_ft
-        if d_ft >= 0:
-            y_ft = (P_ft - math.sqrt(d_ft)) / (2.0 * Cm)
-            b_ft = P_ft - 2.0 * y_ft * raiz_m
-            print("[Nota con ku=1.49 en ft:")
-            print(" R=", round(R_ft, 3), "ft, P=", round(P_ft, 3), "ft,", sep="")
-            print(" y=", round(y_ft, 3), "ft, b=", round(b_ft, 3), "ft]", sep="")
-
-    # Paso 5: Espejo T, Froude, Manning y Borde libre
-    T_agua = b_dis + 2.0 * m * y_dis
-    D_hid = A / T_agua
-    Fr = V / math.sqrt(G * D_hid)
-    Q_ver = (1.0 / n) * A * (R ** (2.0 / 3.0)) * math.sqrt(S0)
-    BL, rango_q = borde_libre_ranga(Q)
-    H = y_dis + BL
-    T_tot = b_dis + 2.0 * m * H
-
-    print("")
-    print("Paso 5: Froude, Verificacion y BL")
-    print("Ancho sup. T = b + 2*z*y =", round(T_agua, 4), "m")
-    print("Prof. hidr. D = A / T =", round(D_hid, 4), "m")
-    print("Froude Fr = V / sqrt(g*D) =", round(Fr, 4))
-    print("Regimen:", regimen_froude(Fr))
-    print("Q verif (Manning) =", round(Q_ver, 4), "m3/s")
-    print("Borde libre BL (Tabla 9-1) =", round(BL, 2), "m")
-    print("Altura total H = y + BL =", round(H, 4), "m")
-    print("Ancho sup. total =", round(T_tot, 4), "m")
-
+    print("Se adopta raiz con b > 0:\n-> y =", r4(yd), "m (", r2(yd), "m)")
+    print("-> b =", r4(bd), "m (", r2(bd), "m)")
+    if u == "2":
+        print("En ft: y =", r4(yd / FT_M), "ft, b =", r4(bd / FT_M), "ft")
+        Rf = ((Vi * n) / (1.49 * math.sqrt(S0))) ** 1.5
+        Pf = (Qi / Vi) / Rf
+        df = Pf * Pf - 4.0 * Cm * (Qi / Vi)
+        if df >= 0:
+            yf = (Pf - math.sqrt(df)) / (2.0 * Cm)
+            bf = Pf - 2.0 * yf * rm
+            print("[ku=1.49: y=", round(yf, 3), "ft, b=", round(bf, 3), "ft]")
+    fin_hidr(Q, n, S0, bd, yd, m, A, R, V, 5)
 
 def op_seccion_optima():
-    print("")
-    print("=== 2. Seccion Hidr. Optima ===")
-    print("Descripcion del ejercicio:")
-    print("Disena el canal de minimo")
-    print("perimetro mojado P para un A")
-    print("(donde siempre R = y / 2):")
-    print("- z = 0  -> Rectangular optimo")
-    print("- z = -1 -> Trapezoidal con talud")
-    print("            optimo z=1/sqrt(3) (60 gr)")
-    print("- z > 0  -> Trapezoidal con z fijo")
-    print("-------------------------------")
-
+    print("\n=== 2. Seccion Hidr. Optima ===\nMinimo P (R = y/2): z=0 (Rect),")
+    print("z=-1 (Opt 60 gr) o z>0 (Trap).")
     Q = float(input("Caudal Q (m3/s): "))
     n = float(input("Rugosidad n: "))
     S0 = float(input("Pendiente S0: "))
-    m_in = float(input("Talud z (0=rect, -1=opt): "))
-
+    mi = float(input("Talud z (0=rect, -1=opt): "))
     if Q <= 0 or n <= 0 or S0 <= 0:
         print("Datos invalidos.")
         return
-
-    es_talud_opt = False
-    if m_in < 0:
+    m = mi
+    if mi < 0:
         m = 1.0 / math.sqrt(3.0)
-        es_talud_opt = True
-    else:
-        m = m_in
-
-    raiz_m = math.sqrt(1.0 + m * m)
-    cb = 2.0 * (raiz_m - m)
-    cA = 2.0 * raiz_m - m
-    Z_req = (Q * n) / math.sqrt(S0)
-    coef_man = cA * (0.5 ** (2.0 / 3.0))
-
-    y = (Z_req / coef_man) ** (3.0 / 8.0)
-    b = cb * y
-    A = cA * y * y
-    P = 2.0 * cA * y
-    R = 0.5 * y
+    rm = math.sqrt(1.0 + m * m)
+    cb, cA = 2.0 * (rm - m), 2.0 * rm - m
+    Zr = (Q * n) / math.sqrt(S0)
+    cm = cA * (0.5 ** (2.0 / 3.0))
+    y = (Zr / cm) ** (3.0 / 8.0)
+    b, A, P, R = cb * y, cA * y * y, 2.0 * cA * y, 0.5 * y
     V = Q / A
-    T_agua = b + 2.0 * m * y
-    D_hid = A / T_agua
-    Fr = V / math.sqrt(G * D_hid)
-    Q_ver = (1.0 / n) * A * (R ** (2.0 / 3.0)) * math.sqrt(S0)
-
-    BL, rango_q = borde_libre_ranga(Q)
-    H = y + BL
-    T_tot = b + 2.0 * m * H
-
-    print("")
-    print("--- PROCEDIMIENTO ---")
-    print("Paso 1: Deduccion y rel. optimas")
-    print("De A = (b + z*y)*y => b = A/y - z*y")
-    print("P = A/y + (2*sqrt(1+z^2) - z)*y")
-    print("Minimizando dP/dy = 0 (con A cte):")
-    if m == 0:
-        print("Caso rectangular (z = 0):")
-        print("-> Relacion b/y = 2  (b = 2*y)")
-        print("-> A = 2*y^2, P = 4*y")
-        print("-> Relacion R/y = A/(P*y) = 1/2 = 0.5")
-    elif es_talud_opt:
-        print("Minimizando tambien dP/dz = 0:")
-        print("-> Talud optimo z = 1/sqrt(3) =", round(m, 4))
-        print("-> Angulo theta = atan(1/z) = 60.0 gr")
-        print("-> Relacion b/y = 2/sqrt(3) =", round(cb, 4))
-        print("-> Relacion T/b = 2.0 (medio hexagono)")
-        print("-> A = sqrt(3)*y^2 =", round(cA, 4), "* y^2")
-        print("-> P = 2*sqrt(3)*y =", round(2.0 * cA, 4), "* y")
-        print("-> Relacion R/y = 1/2 = 0.5")
-    else:
-        ang = math.degrees(math.atan(1.0 / m))
-        print("Para z =", round(m, 4), "(ang =", round(ang, 2), "gr):")
-        print("-> Relacion b/y = 2*(sqrt(1+z^2)-z)")
-        print("   b/y =", round(cb, 4), "=> b =", round(cb, 4), "* y")
-        print("-> A = (2*sqrt(1+z^2)-z)*y^2 =", round(cA, 4), "* y^2")
-        print("-> P =", round(2.0 * cA, 4), "* y")
-        print("-> Relacion R/y = 1/2 = 0.5")
-
-    print("")
-    print("Paso 2: Sustitucion en Manning")
-    print("A * R^(2/3) = (Q * n) / sqrt(S0)")
-    print("Factor req =", round(Z_req, 4))
-    print("(", round(cA, 4), "*y^2) * (0.5*y)^(2/3) =", round(Z_req, 4), sep="")
-    print(round(coef_man, 4), "* y^(8/3) =", round(Z_req, 4))
-
-    print("")
-    print("Paso 3: Dimensiones y Hidraulica")
-    print("y = (", round(Z_req, 4), "/", round(coef_man, 4), ")^(3/8)")
-    print("-> y =", round(y, 4), "m (", round(y, 2), "m)")
-    print("-> b =", round(b, 4), "m (", round(b, 2), "m)")
-    print("-> T =", round(T_agua, 4), "m (", round(T_agua, 2), "m)")
-    print("A =", round(A, 4), "m2, P =", round(P, 4), "m")
-    print("R = y/2 =", round(R, 4), "m")
-    print("V = Q/A =", round(V, 4), "m/s")
-
-    print("")
-    print("Paso 4: Froude, Verificacion y BL")
-    print("Prof. hidr. D = A / T =", round(D_hid, 4), "m")
-    print("Froude Fr = V / sqrt(g*D) =", round(Fr, 4))
-    print("Regimen:", regimen_froude(Fr))
-    print("Q verif (Manning) =", round(Q_ver, 4), "m3/s")
-    print("BL (Tabla 9-1) =", round(BL, 2), "m")
-    print("H = y + BL =", round(H, 4), "m")
-    print("Ancho sup. total =", round(T_tot, 4), "m")
-
+    print("\n--- PROCEDIMIENTO ---\nPaso 1: Deduccion dP/dy = 0 (A cte)")
+    print("b/y = 2*(sqrt(1+z^2)-z) =", r4(cb), "| R/y = 0.5")
+    if mi < 0:
+        print("Talud opt dP/dz=0: z=1/sqrt(3) =", r4(m), "\nAngulo = 60 gr, T/b = 2.0")
+    print("b =", r4(cb), "* y, A =", r4(cA), "* y^2\nP =", r4(2.0 * cA), "* y, R = 0.5 * y")
+    print("Paso 2: A*R^(2/3) = Q*n/sqrt(S0) =", r4(Zr))
+    print(r4(cm), "* y^(8/3) =", r4(Zr), "\nPaso 3: -> y =", r4(y), "m (", r2(y), "m)")
+    print("-> b =", r4(b), "m (", r2(b), "m)\nA =", r4(A), "m2, P =", r4(P), "m")
+    print("R = y/2 =", r4(R), "m, V =", r4(V), "m/s")
+    fin_hidr(Q, n, S0, b, y, m, A, R, V, 4)
 
 def op_fuerza_tractiva():
-    print("")
-    print("=== 3. Fuerza Tractiva (PDF 2) ===")
-    print("Descripcion del ejercicio:")
-    print("Disena por esfuerzo cortante")
-    print("permisible tau_p (N/m2):")
-    print("1) Corrige tau_p por factor K")
-    print("   de talud: K=sqrt(1-sin2(t)/sin2(phi))")
-    print("2) Iguala a 0.76*gamma*y*S0 y halla y")
-    print("3) Halla ancho b por Manning")
-    print("4) Verifica fondo, Froude y BL")
-    print("----------------------------------")
-
+    print("\n=== 3. Fuerza Tractiva ===\n0.76 * gamma * y * S0 = K * tau_p")
     Q = float(input("Caudal Q (m3/s): "))
     n = float(input("Rugosidad n: "))
     S0 = float(input("Pendiente S0: "))
     m = float(input("Talud m [H:V]: "))
-    tau_p = float(input("tau_p perm. (N/m2): "))
-    phi_deg = float(input("Ang. reposo phi (gr, 0=coh): "))
-    fsin = float(input("Factor sinuos. (0=1.0): "))
-
-    if Q <= 0 or n <= 0 or S0 <= 0 or m <= 0 or tau_p <= 0:
+    tp = float(input("tau_p perm. (N/m2): "))
+    pd = float(input("Ang. reposo phi (gr, 0=coh): "))
+    fs = float(input("Factor sinuos. (0=1.0): "))
+    if Q <= 0 or n <= 0 or S0 <= 0 or m <= 0 or tp <= 0:
         print("Datos invalidos.")
         return
-    if fsin <= 0:
-        fsin = 1.0
-
-    gamma = 9810.0
-    tau_pc = tau_p * fsin
-    theta_rad = math.atan(1.0 / m)
-    theta_deg = math.degrees(theta_rad)
-
-    print("")
-    print("--- PROCEDIMIENTO (PDF 2) ---")
-    print("Paso 1: Esfuerzo admisible base")
-    print("tau_p corr = tau_p * f_sin")
-    print("tau_p corr =", round(tau_pc, 4), "N/m2")
-
-    print("")
-    print("Paso 2: Factor K en taludes")
-    print("theta = atan(1/m) =", round(theta_deg, 2), "grados")
-    if phi_deg > 0:
-        if theta_deg >= phi_deg:
-            print("Error: theta >= phi (talud inestable).")
+    if fs <= 0:
+        fs = 1.0
+    tpc = tp * fs
+    tr = math.atan(1.0 / m)
+    td = math.degrees(tr)
+    K = 1.0
+    if pd > 0:
+        if td >= pd:
+            print("Error: theta >= phi (inestable).")
             return
-        phi_rad = math.radians(phi_deg)
-        K = math.sqrt(1.0 - (math.sin(theta_rad) ** 2) / (math.sin(phi_rad) ** 2))
-        print("K = sqrt(1 - sin^2(theta)/sin^2(phi))")
-        print("K =", round(K, 4))
-    else:
-        K = 1.0
-        print("Material cohesivo: K = 1.0")
-
-    tau_lados = K * tau_pc
-    print("tau_p(lados) = K * tau_p =", round(tau_lados, 4), "N/m2")
-
-    print("")
-    print("Paso 3: Despeje del tirante y")
-    print("0.76 * gamma * y * S0 = tau_p(lados)")
-    y = tau_lados / (0.76 * gamma * S0)
-    print("-> y =", round(y, 4), "m")
-
-    print("")
-    print("Paso 4: Ancho b por Manning")
-    Z_req = (Q * n) / math.sqrt(S0)
-    print("A * R^(2/3) = Q*n/sqrt(S0) =", round(Z_req, 4))
-    b = resolver_b(Z_req, y, m)
+        pr = math.radians(pd)
+        K = math.sqrt(1.0 - (math.sin(tr) ** 2) / (math.sin(pr) ** 2))
+    tl = K * tpc
+    y = tl / (0.76 * 9810.0 * S0)
+    Zr = (Q * n) / math.sqrt(S0)
+    b = resolver_b(Zr, y, m)
     if b is None:
         print("No se pudo converger b.")
         return
-    if b == 0.0:
-        print("Nota: Con b=0 (triangular) ya")
-        print("supera el caudal requerido.")
-    print("-> b =", round(b, 4), "m")
-
-    A, P, R, _, _ = geom_trap(b, y, m)
+    A, _, R, _, _ = geom_trap(b, y, m)
     V = Q / A
-    T_agua = b + 2.0 * m * y
-    D_hid = A / T_agua
-    Fr = V / math.sqrt(G * D_hid)
-    tau_fondo = gamma * y * S0
-    BL, rango_q = borde_libre_ranga(Q)
-    H = y + BL
-
-    print("")
-    print("Paso 5: Chequeo fondo, Froude y BL")
-    print("tau_fondo = gamma * y * S0")
-    print("tau_fondo =", round(tau_fondo, 3), "N/m2")
-    if tau_fondo <= tau_pc * 1.001:
-        print("Chequeo: tau_fondo <= tau_p -> CUMPLE")
-    else:
-        print("Chequeo: tau_fondo > tau_p -> NO CUMPLE")
-    print("A =", round(A, 4), "m2, V =", round(V, 4), "m/s")
-    print("T =", round(T_agua, 4), "m, Fr =", round(Fr, 4))
-    print("Regimen:", regimen_froude(Fr))
-    print("BL (Tabla 9-1) =", round(BL, 2), "m")
-    print("-> H = y + BL =", round(H, 4), "m")
-
+    tf = 9810.0 * y * S0
+    est = "CUMPLE"
+    if tf > tpc * 1.001:
+        est = "NO CUMPLE"
+    print("\n--- PROCEDIMIENTO ---\nPaso 1: tau_p corr =", r4(tpc), "N/m2")
+    print("Paso 2: theta =", r2(td), "gr, K =", r4(K))
+    print("        tau_p(lados) = K*tau_p =", r4(tl), "N/m2")
+    print("Paso 3: -> y =", r4(y), "m (", r2(y), "m)\nPaso 4: A*R^(2/3) =", r4(Zr))
+    print("-> b =", r4(b), "m (", r2(b), "m)\nA =", r4(A), "m2, V =", r4(V), "m/s")
+    print("tau_fondo =", round(tf, 3), "N/m2 ->", est)
+    fin_hidr(Q, n, S0, b, y, m, A, R, V, 5)
 
 def menu():
-    print("=== Diseno de Canales ===")
-    print("1. Vel. Max. Permisible")
-    print("2. Secc. Hidr. Optima (Rect/Trap)")
-    print("3. Fuerza Tractiva (PDF 2)")
-
+    print("=== Diseno de Canales ===\n1. Vel. Max. Permisible")
+    print("2. Secc. Hidr. Optima (Rect/Trap)\n3. Fuerza Tractiva")
     op = input("Opcion (1-3): ")
     try:
         if op == "1":
@@ -451,6 +217,5 @@ def menu():
         print("Error: Use valores numericos.")
     except ZeroDivisionError:
         print("Error: Division por cero.")
-
 
 menu()

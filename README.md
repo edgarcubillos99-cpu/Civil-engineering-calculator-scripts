@@ -7,7 +7,7 @@
 
 <p align="center">
   <img alt="Python" src="https://img.shields.io/badge/MicroPython-Casio%20FX--CG100-blue?logo=python&logoColor=white">
-  <img alt="Scripts" src="https://img.shields.io/badge/scripts-4-success">
+  <img alt="Scripts" src="https://img.shields.io/badge/scripts-7-success">
   <img alt="Temas" src="https://img.shields.io/badge/temas-canales%20%7C%20hidr%C3%A1ulica%20%7C%20estructuras-lightgrey">
 </p>
 
@@ -27,13 +27,13 @@
 
 ## 🔎 Descripción general
 
-Cada script pide los datos por consola, calcula y muestra el resultado en pantalla.
+Cada script explica primero qué problema resuelve, pide los datos por consola y muestra el **procedimiento paso a paso** junto con los resultados en pantalla.
 
-El objetivo es tener en la calculadora las mismas herramientas que se usan en clase y en exámenes, sin depender de hojas de cálculo.
+El objetivo es tener en la calculadora las mismas herramientas y tablas que se usan en clase y en exámenes, sin depender de hojas de cálculo.
 
 | | |
 |---|---|
-| 🎯 **Uso** | Cálculos de carrera directamente en la FX-CG100 |
+| 🎯 **Uso** | Cálculos y procedimientos paso a paso directamente en la FX-CG100 |
 | 🐍 **Lenguaje** | MicroPython (intérprete Python de Casio) |
 | 💾 **Memoria** | Los `.py` van a la *Storage Memory* (~4,5 MB) |
 | 🧩 **Dependencias** | Ninguna: cada script es independiente |
@@ -49,7 +49,7 @@ El objetivo es tener en la calculadora las mismas herramientas que se usan en cl
 En Linux, con la calculadora montada en `/media/$USER/disk`:
 
 ```bash
-cp "DISEÑO DE CANALES/froude.py" /media/$USER/disk/
+cp "DISEÑO DE CANALES/manning.py" "DISEÑO DE CANALES/discanal.py" "DISEÑO DE CANALES/guiacan.py" /media/$USER/disk/
 rm -rf /media/$USER/disk/.Trash-1000   # el gestor de archivos deja basura al borrar
 sync && gio mount -u /media/$USER/disk # expulsar de forma segura
 ```
@@ -58,7 +58,7 @@ sync && gio mount -u /media/$USER/disk # expulsar de forma segura
 
 **4. Ejecutar:** abre el menú **Python**, sitúate sobre el archivo y pulsa `tools` → `file` → `open` para abrirlo, luego `tools` → `Run`.
 
-**5. Introducir** los datos cuando se pidan y leer los resultados en pantalla.
+**5. Introducir** los datos cuando se pidan y leer el procedimiento y resultados en pantalla.
 
 ---
 
@@ -70,14 +70,14 @@ sync && gio mount -u /media/$USER/disk # expulsar de forma segura
 | | Regla | Detalle |
 |---|---|---|
 | 🔤 | **Solo ASCII** | Nada de tildes ni `ñ`, tampoco en los comentarios. MicroPython de Casio falla al abrir archivos con caracteres acentuados. Escribe `Calculos`, `seccion`, `regimen` |
-| ✂️ | **Nombre corto** | Máximo 8 caracteres antes del `.py`, sin espacios ni acentos (`froude.py`, no `froude_casio_v2.py`) |
+| ✂️ | **Nombre corto** | Máximo 8 caracteres antes del `.py`, sin espacios ni acentos (`manning.py`, `discanal.py`, `guiacan.py`) |
 | 📂 | **En la raíz** | De la memoria de almacenamiento, nunca en subcarpetas |
 | 💾 | **Archivo guardado** | Comprueba que no pesa 0 bytes (`ls -l`); un buffer sin guardar en el editor copia un archivo vacío |
 
 > [!TIP]
 > Otras notas:
 > - Usa punto decimal (`1.6`, no `1,6`).
-> - Unidades del SI: m, m³/s, m/s (se recomienda para que todos los scripts concuerden).
+> - Unidades del SI: m, m³/s, m/s (salvo `discanal.py`, que también acepta unidades inglesas ft, ft³/s y ft/s y las convierte automáticamente).
 > - Los scripts son independientes: puedes llevar solo los que necesites.
 > - La app **Memory** solo muestra 200 archivos por carpeta: ese es el tope práctico de scripts en la raíz.
 
@@ -90,9 +90,13 @@ Los archivos se agrupan por tema, no por número de práctica. Así se pueden a�
 ```text
 scripts-para-la-u/
 ├── README.md                   → esta documentación
-├── DISEÑO DE CANALES/          → flujo en canales abiertos
+├── DISEÑO DE CANALES/          → flujo en canales abiertos y diseño
 │   ├── froude.py               → número de Froude y régimen del flujo
-│   └── E_especifica.py         → curva de energía específica (E-y)
+│   ├── E_especifica.py         → curva de energía específica (E-y)
+│   ├── E_espf.py               → versión de nombre corto (8 chars) de E_especifica
+│   ├── manning.py              → flujo uniforme por Manning paso a paso (Puntos 1 y 2)
+│   ├── discanal.py             → diseño de canales y bordes libres paso a paso (Puntos 3 y 4 + Fuerza Tractiva)
+│   └── guiacan.py              → guía de procedimientos y tablas de diseño (Chow, USACE, Ranga Raju, Gupta, USBR)
 ├── DISEÑO DE ESTRUCTURAS/      → acero de refuerzo y vigas (ASD)
 │   ├── barras.py               → consulta ASTM y config. económica
 │   └── asdviga.py              → diseño/revisión de viga por ASD
@@ -109,6 +113,9 @@ Nombres de archivo en `snake_case`, en minúsculas, con extensión `.py`.
 |---------|-----------|----------------|
 | 🌊 Diseño de canales | [`froude.py`](DISEÑO%20DE%20CANALES/froude.py) | Número de Froude y régimen del flujo (subcrítico / crítico / supercrítico) para sección rectangular, trapezoidal, triangular o circular |
 | 🌊 Diseño de canales | [`E_especifica.py`](DISEÑO%20DE%20CANALES/E_especifica.py) | Tabla de energía específica `E` frente al tirante `y` (curva E–y) para sección rectangular, trapezoidal, triangular o circular |
+| 🌊 Diseño de canales | [`manning.py`](DISEÑO%20DE%20CANALES/manning.py) | Flujo uniforme con la ecuación de Manning paso a paso: hallar ancho `b` (Punto 1), relación `Q–y` sin conocer `n` ni `S0` (Punto 2), tirante normal `yn` y caudal `Q` |
+| 🌊 Diseño de canales | [`discanal.py`](DISEÑO%20DE%20CANALES/discanal.py) | Diseño de canales paso a paso con borde libre: Velocidad Máxima Permisible en SI o ft (Punto 3), Sección Hidráulicamente Óptima (Punto 4) y Fuerza Tractiva |
+| 🌊 Diseño de canales | [`guiacan.py`](DISEÑO%20DE%20CANALES/guiacan.py) | Guía interactiva de procedimientos paso a paso y tablas de consulta: `n` de Manning (Tabla 4-1), bordes libres (Tabla 9-1), taludes (Tabla 9-2), velocidades máximas (Tabla 9-3), limo y esfuerzo cortante (Tabla 9-4 y Figs. 9-3 a 9-5) |
 | 🏛️ Diseño de estructuras | [`barras.py`](DISEÑO%20DE%20ESTRUCTURAS/barras.py) | Consulta de barras ASTM y configuración económica de refuerzo a flexión: cubre el `As` mínimo con el menor peso |
 | 🏛️ Diseño de estructuras | [`asdviga.py`](DISEÑO%20DE%20ESTRUCTURAS/asdviga.py) | Viga rectangular por ASD: `As` (Viète), sección económica, revisión, capacidad `Mr` y `w` de viga simple |
 
@@ -121,7 +128,7 @@ Nombres de archivo en `snake_case`, en minúsculas, con extensión `.py`.
 Determina si el flujo en un canal es **subcrítico** (`Fr < 1`), **crítico** (`Fr = 1`) o **supercrítico** (`Fr > 1`).
 
 > [!WARNING]
-> Los canales son tipicos, osea simetricos. No usar si por ejemplo el objetivo es un trapezoidal o triangular con dos pendientes (`z`) diferentes.
+> Los canales son típicos, o sea simétricos. No usar si el objetivo es un canal trapezoidal o triangular con dos pendientes (`z`) diferentes.
 
 **📥 Datos según la sección**
 
@@ -138,12 +145,12 @@ Determina si el flujo en un canal es **subcrítico** (`Fr < 1`), **crítico** (`
 
 <br>
 
-### 🌊 `E_especifica.py` — Curva de energía específica
+### 🌊 `E_especifica.py` (y `E_espf.py`) — Curva de energía específica
 
 Genera una **tabla de puntos** de la curva energía específica–tirante (`E`–`y`) para un caudal fijo. Sirve para dibujar a mano o localizar el mínimo de `E` (tirante crítico) mirando los valores.
 
 > [!WARNING]
-> Los canales son tipicos, osea simetricos. No usar si por ejemplo el objetivo es un trapezoidal o triangular con dos pendientes (`z`) diferentes.
+> Los canales son típicos, o sea simétricos. No usar si el objetivo es un canal trapezoidal o triangular con dos pendientes (`z`) diferentes.
 
 **📥 Datos según la sección**
 
@@ -161,7 +168,85 @@ Después pide el **rango de la gráfica**: tirante inicial `y`, tirante final y 
 **🚧 Aviso:** si en sección circular el tirante llega al diámetro, imprime `Tubo Lleno` en esa fila y sigue con el siguiente paso.
 
 > [!NOTE]
-> En la calculadora el nombre supera 8 caracteres: al copiarlo a la raíz, renómbralo a algo corto (`energia.py`, `Espec.py`).
+> `E_espf.py` contiene el mismo programa pero con nombre de 6 caracteres para copiarlo directamente a la calculadora sin renombrar.
+
+<br>
+
+### 🌊 `manning.py` — Flujo uniforme y ecuación de Manning (Paso a paso)
+
+Resuelve problemas de **flujo uniforme** explicando primero qué busca el ejercicio, pidiendo los datos y detallando en pantalla cada paso del desarrollo algebraico y numérico.
+
+**📥 Opciones del menú y datos que pide**
+
+| Opción | Qué resuelve | Datos que pide |
+|--------|--------------|----------------|
+| **1. Hallar `b` (Punto 1 taller)** | Calcula el ancho de solera `b` necesario en un canal rectangular (`m = 0`) o trapezoidal (`m > 0`) | `Q` (m³/s), `n`, pendiente `S0`, tirante `yn` (m), talud `m` (`0` = rectangular) |
+| **2. Sin `n` ni `S0` (Punto 2 taller)** | Cuando `n` y `S0` no se conocen pero son constantes en el mismo canal, despeja la constante `K = √S0 / n = Q1 / (A1 R1^(2/3))` para hallar: **a)** el caudal `Q2` a un nuevo tirante `y2`, y **b)** el tirante `y3` para un nuevo caudal `Q3` (p. ej. la mitad del caudal) | `b` (m), `m` (`0` = rect.), caudal base `Q1` (m³/s), tirante base `y1` (m), nuevo tirante `y2` (m), nuevo caudal `Q3` (`0` usa automáticamente `Q1 / 2`) |
+| **3. Hallar tirante `yn`** | Calcula la profundidad normal `yn` conociendo la base `b` | `Q` (m³/s), `n`, `S0`, `b` (m), `m` (`0` = rect.) |
+| **4. Calcular `Q` y `V` directo** | Calcula área `A`, perímetro `P`, radio hidráulico `R`, velocidad `V` y caudal `Q` | `b` (m), `yn` (m), `m`, `n`, `S0` |
+
+**📤 Desarrollo paso a paso que muestra en pantalla**
+
+- **Opción 1 (Punto 1):**
+  1. Plantea las ecuaciones de `A(b)`, `P(b)` y `R(b) = A/P` sustituyendo `yn`.
+  2. Despeja el factor de sección requerido por Manning: `A · R^(2/3) = (Q · n) / √S0`.
+  3. Plantea `A^(5/3) / P^(2/3) = Factor` y resuelve numéricamente para `b` (para los datos del taller `Q=9, n=0.013, S0=0.0005, yn=1.60, m=0` entrega `b = 3.6402 m`).
+  4. Comprueba `A`, `P`, `R`, `V` y `Q`.
+- **Opción 2 (Punto 2):**
+  1. Calcula `A1`, `P1`, `R1`, `Z1 = A1 · R1^(2/3)` y la constante `K = √S0 / n = Q1 / Z1`.
+  2. **Inciso a):** Con `y2`, calcula `A2`, `P2`, `R2`, `Z2` y obtiene `Q2 = K · Z2` (para `y2 = 0.75 m` entrega `Q2 = 2.7294 m³/s`).
+  3. **Inciso b):** Con `Q3`, halla `Z3 = Q3 / K`, plantea la ecuación en función de `y3` y resuelve `y3` (para `Q3 = 5 m³/s` entrega `y3 = 1.0431 m`).
+
+<br>
+
+### 🌊 `discanal.py` — Diseño de canales en flujo uniforme (Paso a paso)
+
+Diseña la sección transversal completa de un canal (`b`, `y`, borde libre `BL` según la Tabla 9-1 de Ranga Raju, altura total `H = y + BL` y espejo de agua `T`) explicando cada paso del procedimiento.
+
+**📥 Opciones del menú y datos que pide**
+
+| Opción | Método de diseño | Datos que pide |
+|--------|------------------|----------------|
+| **1. Vel. Max. Permisible (Punto 3)** | **Método de la velocidad máxima permisible (Guía PDF 1):** diseña un canal erosionable sin superar `Vmax`, verifica Froude y Manning | Sistema de unidades (`1` = SI en m, `2` = Inglés en ft), `Q`, `Vmax`, `n`, `S0`, talud `z` |
+| **2. Secc. Hidr. Optima (Punto 4)** | **Método de la sección hidráulicamente óptima (máxima eficiencia):** minimiza el perímetro mojado cumpliendo `R = y / 2`, verifica Froude y Manning | `Q` (m³/s), `n`, `S0`, talud `z` (`0` = rectangular óptimo, `-1` = trapezoidal con talud óptimo `z = 1/√3`, `> 0` = talud fijo) |
+| **3. Fuerza Tractiva (PDF 2)** | **Método del esfuerzo cortante permisible (Guía PDF 2):** diseña por fuerza tractiva en los taludes (`0.76 γ y S0 = K τp`) y verifica el fondo (`γ y S0 ≤ τp`), Froude y Manning | `Q` (m³/s), `n`, `S0`, `m`, esfuerzo admisible `tau_p` (N/m²), ángulo de reposo `phi` (grados; `0` si es cohesivo) y factor de sinuosidad (`0` = 1.0 canal recto) |
+
+**📤 Desarrollo paso a paso que muestra en pantalla**
+
+- **Opción 1 (Punto 3 — Velocidad Máxima Permisible):**
+  1. Si se eligen unidades inglesas (`ft³/s` y `ft/s`), convierte primero `Q` y `V` al SI (`1 ft = 0.3048 m`) y muestra los resultados en cada paso **tanto en metros (m) como en pies (ft)** (incluyendo una nota con `ku = 1.49` directo en pies).
+  2. Calcula `R = (V · n / √S0)^(3/2)` de Manning y `A = Q / V` de continuidad.
+  3. Calcula el perímetro mojado `P = A / R`.
+  4. Despeja `b = P - 2y√(1+m²)`, lo sustituye en `A = (b + my)y` para formar la cuadrática `Cm · y² - P · y + A = 0` (con `Cm = 2√(1+m²) - m`), muestra el discriminante, ambas raíces `(y1, b1)` y `(y2, b2)` y selecciona la raíz físicamente válida (`b > 0`). Para el Punto 3 (`Q=74 ft³/s, V=2.80 ft/s, n=0.021, S0=0.0009, m=2.0`) entrega `y = 0.6712 m (2.202 ft)` y `b = 2.3157 m (7.597 ft)`.
+  5. Asigna el borde libre `BL` de la Tabla 9-1 (`BL = 0.75 m`) y calcula `H = y + BL = 1.4212 m (4.663 ft)`.
+- **Opción 2 (Punto 4 — Sección Hidráulicamente Óptima):**
+  1. Obtiene las relaciones óptimas en función de `y`: `b = 2y(√(1+m²) - m) = cb · y`, `A = (2√(1+m²) - m)y² = cA · y²`, `P = 2 cA · y` y `R = y / 2 = 0.5 y`.
+  2. Sustituye `A` y `R` en Manning: `(cA · y²)(0.5 y)^(2/3) = (Q · n) / √S0`.
+  3. Despeja `y`, `b`, `A`, `P`, `R` y `V`. Para el Punto 4 (`Q=7 m³/s, n=0.015, S0=0.0006, m=1.25`) entrega `y = 1.5974 m` y `b = 1.1207 m`.
+  4. Suma el borde libre de la Tabla 9-1 (`BL = 0.75 m`) obteniendo `H = 2.3474 m`.
+- **Opción 3 (Guía PDF 2 — Fuerza Tractiva):**
+  1. Ajusta `tau_p` por sinuosidad.
+  2. Calcula el ángulo del talud `θ = atan(1/m)` y el factor de reducción `K = √(1 - sin²θ / sin²φ)` para obtener `tau_p(lados) = K · tau_p`.
+  3. Iguala `0.76 · γ · y · S0 = tau_p(lados)` (con `γ = 9810 N/m³`) y despeja `y`.
+  4. Con `y` fijo, despeja `b` de la ecuación de Manning.
+  5. Verifica que en el fondo `tau_fondo = γ · y · S0 ≤ tau_p` y añade `BL` de la Tabla 9-1.
+
+<br>
+
+### 🌊 `guiacan.py` — Guía de procedimientos y tablas de diseño
+
+Script interactivo de consulta rápida para llevar las **guías de procedimiento, fórmulas y tablas de los PDFs** directamente en la calculadora.
+
+**📋 Opciones de consulta**
+
+| Opción | Contenido |
+|--------|-----------|
+| `1. Proc: Vel. Max. Permisible` | Los 5 pasos del procedimiento del PDF 1 y el despeje de la ecuación cuadrática `Cm · y² - P · y + A = 0` |
+| `2. Proc: Fuerza Tractiva` | Los 5 pasos del procedimiento del PDF 2, factores de sinuosidad, ecuación de `K`, cortante en lados (`0.76 γ y S0`) y fondo (`γ y S0`) |
+| `3. Proc: Secc. Optima y Manning` | Fórmulas de sección hidráulicamente óptima (`R = y/2`), relación a `n` y `S0` constantes (`K = √S0 / n`) y factores de conversión `ft ↔ m` |
+| `4. Tabla 4-1: n de Manning` | Coeficientes `n` de Manning para metales, no metales y cauces naturales (Chow, 1959) |
+| `5. Tablas 9-1 y 9-2: BL y Talud` | Borde libre recomendado según el caudal `Q` (Ranga Raju, 1983) y taludes laterales `m:1` según el material (Fortier & Scobey, 1926) |
+| `6. Tablas 9-3, 9-4 y Figs 9-3..5` | Velocidades máximas permisibles (USACE, 1970), tamaño de partícula y factor de limo (Gupta, 1989) y guía de lectura de las Figuras 9-3 (`φ`), 9-4 (`τp` no cohesivo) y 9-5 (`τp` cohesivo) |
 
 <br>
 
@@ -179,14 +264,10 @@ Consulta la tabla ASTM de barras (diámetro en octavos de pulgada) o busca la **
 | 1. Consultar barra | Número de barra (`2`–`11`, `14`, `18`) |
 | 2. Config. optima | Área requerida `As` (mm²) y número de barras `n` |
 
-La opción 2 recorre combinaciones de **un solo diámetro** (`n` barras iguales) y de **dos diámetros** (`k` de un tamaño y `n − k` del otro). Descarta las que no llegan a `As` y ordena el resto así: menor masa; si empatan, un solo diámetro; luego diámetros más cercanos; luego menos excedente.
-
 **📤 Salida**
 
 - Opción 1: diámetro de referencia, `d` (mm), `As` (mm²), perímetro `P` (mm) y masa `m` (kg/m).
 - Opción 2: la combinación óptima y hasta dos alternativas, con `As` colocada, excedente `exc = As − As_req` y masa total `m` (kg/m).
-
-**🚧 Aviso:** si con `n` barras no se alcanza `As_req` (ni con `#18`), indica que hay que probar más barras.
 
 <br>
 
@@ -199,9 +280,7 @@ Diseño, revisión y **capacidad** de viga rectangular a flexión por el **Méto
 
 **📥 Datos según la opción**
 
-Materiales en todas: `f'c` (MPa), factor `kfc` (pon `0` para usar `0.45`, o sea `fc = 0.45 f'c`), `fs` (MPa) y `n = Es/Ec` (si pones `0`, pide `Es` y `Ec`). El `fs` es el esfuerzo **admisible** del acero (en clase a veces lo anotan como `fy`).
-
-En las opciones 1–3 puedes dar el momento `M` (kN·m) o poner `0` y el script lo calcula con `w` (kN/m) y `L` (m).
+Materiales en todas: `f'c` (MPa), factor `kfc` (pon `0` para usar `0.45`, o sea `fc = 0.45 f'c`), `fs` (MPa) y `n = Es/Ec` (si pones `0`, pide `Es` y `Ec`).
 
 | Opción | Datos que pide |
 |--------|----------------|
@@ -210,10 +289,6 @@ En las opciones 1–3 puedes dar el momento `M` (kN·m) o poner `0` y el script 
 | 3. Revisar sección | `M` (o `w` y `L`), `b`, `d` y `As` (mm²) |
 | 4. Capacidad `Mr` | `b`, `d`, `As` (mm²) y `L` (m; `0` omite `w_max`) |
 
-La opción 1 comprueba primero `M_max = ½ fc k_b j_b b d²` con `k_b = n fc / (n fc + fs)` y `ρ_b = fc k_b / (2 fs)`. Si `M` cabe, resuelve el cúbico `k³ − 3k² − Ck + C = 0` con `C = 6nM / (fs b d²)` y entrega `k`, `j`, `ρ` y `As`.
-
-La opción 4 usa el `k` de la cuantía **real** `ρ = As/(b d)` (no el `k_b`) para `Ms = As fs j d` y `Mc = ½ fc k j b d²`. El resistente es `Mr = min(Ms, Mc)`. Si diste `L`, `w_max = 8 Mr / L²`.
-
 **📤 Salida**
 
 - Opción 1: `k`, `j`, `ρ`, `ρ_b`, tipo (subreforzado / balanceado) y `As` (mm²).
@@ -221,13 +296,11 @@ La opción 4 usa el `k` de la cuantía **real** `ρ = As/(b d)` (no el `k_b`) pa
 - Opción 3: `Ms`, `Mc`, `M_all = min(Ms, Mc)`, esfuerzos reales `fs,r` y `fc,r` bajo `M`, y si **cumple**.
 - Opción 4: `k`, `j`, `kd`, tipo (subreforzado / balanceado / sobrereforzado), `fc` si el acero llega a `fs`, `Ms`, `Mc`, `Mr` y `w_max` si hay `L`.
 
-**🚧 Aviso:** si `M > M_max`, la opción 1 indica que no cabe como simplemente armada: hay que aumentar `b` o `d`. El momento se imprime en **kN·m** (no kN/m; eso es la carga `w`).
-
 ---
 
 ## 💡 Cómo añadir un script nuevo
 
-1. 📁 Colócalo en la carpeta del tema (crea la carpeta si no existe).
-2. 📚 Añade una fila en la tabla de [Catálogo de scripts](#-catálogo-de-scripts).
-3. 🌊 Si el uso no es obvio, escribe un apartado en [Descripción de scripts](#-descripción-de-scripts).
+1. 📁 Colócalo en la carpeta del tema (crea la carpeta si no existe) con un nombre de **máximo 8 caracteres** antes de `.py` y **100% ASCII**.
+2. 📚 Añade una fila en la tabla de [Catálogo de scripts](#-catálogo-de-scripts) y actualiza el contador del badge superior.
+3. 🌊 Escribe su apartado en [Descripción de scripts](#-descripción-de-scripts) indicando qué problema resuelve, qué datos pide y qué pasos muestra.
 4. 📐 Repasa los [requisitos](#-requisitos-y-notas-de-uso) antes de pasarlo a la calculadora.

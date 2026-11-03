@@ -8,30 +8,48 @@ def energia_especifica():
     print("4. Circular")
     
     tipo = input("Tipo de canal (1-4): ")
-    
+    if tipo not in ('1', '2', '3', '4'):
+        print("Opcion invalida.")
+        return
+
     try:
         Q = float(input("Caudal Q (m3/s): "))
+        if Q <= 0:
+            print("Datos invalidos.")
+            return
         g = 9.81
-        
+
         # Pedir datos geometricos segun la seccion
         if tipo == '1':
             b = float(input("Ancho base b (m): "))
+            if b <= 0:
+                print("Datos invalidos.")
+                return
         elif tipo == '2':
             b = float(input("Ancho base b (m): "))
-            z = float(input("Talud z (m) [H:V]: "))
+            z = float(input("Talud z [H:V]: "))
+            if b <= 0 or z <= 0:
+                print("Datos invalidos.")
+                return
         elif tipo == '3':
-            z = float(input("Talud z (m) [H:V]: "))
+            z = float(input("Talud z [H:V]: "))
+            if z <= 0:
+                print("Datos invalidos.")
+                return
         elif tipo == '4':
             d0 = float(input("Diametro d0 (m): "))
-        else:
-            print("Opcion invalida.")
-            return
-            
+            if d0 <= 0:
+                print("Datos invalidos.")
+                return
+
         # Rango para generar la tabla de la curva
         print("\n-- Rango de la grafica --")
         y_inicial = float(input("Tirante y inicial (m): "))
         y_final = float(input("Tirante y final (m): "))
         paso = float(input("Tamano del paso (m): "))
+        if paso <= 0 or y_final < y_inicial:
+            print("Rango o paso invalido.")
+            return
         
         print("\n--- Tabla de Energia ---")
         print(" y (m)   |   E (m)  ")

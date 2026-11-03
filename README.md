@@ -94,8 +94,8 @@ scripts-para-la-u/
 │   ├── froude.py               → número de Froude y régimen del flujo
 │   ├── E_especifica.py         → curva de energía específica (E-y)
 │   ├── E_espf.py               → versión de nombre corto (8 chars) de E_especifica
-│   ├── manning.py              → flujo uniforme por Manning paso a paso (Puntos 1 y 2)
-│   ├── discanal.py             → diseño de canales y bordes libres paso a paso (Puntos 3 y 4 + Fuerza Tractiva)
+│   ├── manning.py              → flujo uniforme por Manning paso a paso (b, yn, Q y relación Q-y)
+│   ├── discanal.py             → diseño de canales y bordes libres paso a paso (Velocidad Permisible, Sección Óptima y Fuerza Tractiva)
 │   └── guiacan.py              → guía de procedimientos y tablas de diseño (Chow, USACE, Ranga Raju, Gupta, USBR)
 ├── DISEÑO DE ESTRUCTURAS/      → acero de refuerzo y vigas (ASD)
 │   ├── barras.py               → consulta ASTM y config. económica
@@ -113,8 +113,8 @@ Nombres de archivo en `snake_case`, en minúsculas, con extensión `.py`.
 |---------|-----------|----------------|
 | 🌊 Diseño de canales | [`froude.py`](DISEÑO%20DE%20CANALES/froude.py) | Número de Froude y régimen del flujo (subcrítico / crítico / supercrítico) para sección rectangular, trapezoidal, triangular o circular |
 | 🌊 Diseño de canales | [`E_especifica.py`](DISEÑO%20DE%20CANALES/E_especifica.py) | Tabla de energía específica `E` frente al tirante `y` (curva E–y) para sección rectangular, trapezoidal, triangular o circular |
-| 🌊 Diseño de canales | [`manning.py`](DISEÑO%20DE%20CANALES/manning.py) | Flujo uniforme con la ecuación de Manning paso a paso: hallar ancho `b` (Punto 1), relación `Q–y` sin conocer `n` ni `S0` (Punto 2), tirante normal `yn` y caudal `Q` |
-| 🌊 Diseño de canales | [`discanal.py`](DISEÑO%20DE%20CANALES/discanal.py) | Diseño de canales paso a paso con borde libre: Velocidad Máxima Permisible en SI o ft (Punto 3), Sección Hidráulicamente Óptima (Punto 4) y Fuerza Tractiva |
+| 🌊 Diseño de canales | [`manning.py`](DISEÑO%20DE%20CANALES/manning.py) | Flujo uniforme con la ecuación de Manning paso a paso: dimensionamiento de base `b`, relación `Q–y` sin conocer `n` ni `S0`, tirante normal `yn` y cálculo directo de `Q` y `V` |
+| 🌊 Diseño de canales | [`discanal.py`](DISEÑO%20DE%20CANALES/discanal.py) | Diseño de canales paso a paso con borde libre: Velocidad Máxima Permisible en SI o ft, Sección Hidráulicamente Óptima y Fuerza Tractiva |
 | 🌊 Diseño de canales | [`guiacan.py`](DISEÑO%20DE%20CANALES/guiacan.py) | Guía interactiva de procedimientos paso a paso y tablas de consulta: `n` de Manning (Tabla 4-1), bordes libres (Tabla 9-1), taludes (Tabla 9-2), velocidades máximas (Tabla 9-3), limo y esfuerzo cortante (Tabla 9-4 y Figs. 9-3 a 9-5) |
 | 🏛️ Diseño de estructuras | [`barras.py`](DISEÑO%20DE%20ESTRUCTURAS/barras.py) | Consulta de barras ASTM y configuración económica de refuerzo a flexión: cubre el `As` mínimo con el menor peso |
 | 🏛️ Diseño de estructuras | [`asdviga.py`](DISEÑO%20DE%20ESTRUCTURAS/asdviga.py) | Viga rectangular por ASD: `As` (Viète), sección económica, revisión, capacidad `Mr` y `w` de viga simple |
@@ -180,22 +180,22 @@ Resuelve problemas de **flujo uniforme** explicando primero qué busca el ejerci
 
 | Opción | Qué resuelve | Datos que pide |
 |--------|--------------|----------------|
-| **1. Hallar `b` (Punto 1 taller)** | Calcula el ancho de solera `b` necesario en un canal rectangular (`m = 0`) o trapezoidal (`m > 0`) | `Q` (m³/s), `n`, pendiente `S0`, tirante `yn` (m), talud `m` (`0` = rectangular) |
-| **2. Sin `n` ni `S0` (Punto 2 taller)** | Cuando `n` y `S0` no se conocen pero son constantes en el mismo canal, despeja la constante `K = √S0 / n = Q1 / (A1 R1^(2/3))` para hallar: **a)** el caudal `Q2` a un nuevo tirante `y2`, y **b)** el tirante `y3` para un nuevo caudal `Q3` (p. ej. la mitad del caudal) | `b` (m), `m` (`0` = rect.), caudal base `Q1` (m³/s), tirante base `y1` (m), nuevo tirante `y2` (m), nuevo caudal `Q3` (`0` usa automáticamente `Q1 / 2`) |
+| **1. Hallar base `b`** | Calcula el ancho de solera `b` necesario en un canal rectangular (`m = 0`) o trapezoidal (`m > 0`) | `Q` (m³/s), `n`, pendiente `S0`, tirante `yn` (m), talud `m` (`0` = rectangular) |
+| **2. Sin `n` ni `S0` (Relación Q–y)** | Cuando `n` y `S0` no se conocen pero son constantes en el mismo canal, despeja la constante `K = √S0 / n = Q1 / (A1 R1^(2/3))` para hallar: **a)** el caudal `Q2` a un nuevo tirante `y2`, y **b)** el tirante `y3` para un nuevo caudal `Q3` (p. ej. la mitad del caudal) | `b` (m), `m` (`0` = rect.), caudal base `Q1` (m³/s), tirante base `y1` (m), nuevo tirante `y2` (m), nuevo caudal `Q3` (`0` usa automáticamente `Q1 / 2`) |
 | **3. Hallar tirante `yn`** | Calcula la profundidad normal `yn` conociendo la base `b` | `Q` (m³/s), `n`, `S0`, `b` (m), `m` (`0` = rect.) |
 | **4. Calcular `Q` y `V` directo** | Calcula área `A`, perímetro `P`, radio hidráulico `R`, velocidad `V` y caudal `Q` | `b` (m), `yn` (m), `m`, `n`, `S0` |
 
 **📤 Desarrollo paso a paso que muestra en pantalla**
 
-- **Opción 1 (Punto 1):**
+- **Opción 1 (Hallar base `b`):**
   1. Plantea las ecuaciones de `A(b)`, `P(b)` y `R(b) = A/P` sustituyendo `yn`.
   2. Despeja el factor de sección requerido por Manning: `A · R^(2/3) = (Q · n) / √S0`.
-  3. Plantea `A^(5/3) / P^(2/3) = Factor` y resuelve numéricamente para `b` (para los datos del taller `Q=9, n=0.013, S0=0.0005, yn=1.60, m=0` entrega `b = 3.6402 m`).
+  3. Plantea `A^(5/3) / P^(2/3) = Factor` y resuelve numéricamente para `b` (ej. para `Q=9, n=0.013, S0=0.0005, yn=1.60, m=0` entrega `b = 3.6402 m`).
   4. Comprueba `A`, `P`, `R`, `V` y `Q`.
-- **Opción 2 (Punto 2):**
+- **Opción 2 (Relación Q–y sin `n` ni `S0`):**
   1. Calcula `A1`, `P1`, `R1`, `Z1 = A1 · R1^(2/3)` y la constante `K = √S0 / n = Q1 / Z1`.
-  2. **Inciso a):** Con `y2`, calcula `A2`, `P2`, `R2`, `Z2` y obtiene `Q2 = K · Z2` (para `y2 = 0.75 m` entrega `Q2 = 2.7294 m³/s`).
-  3. **Inciso b):** Con `Q3`, halla `Z3 = Q3 / K`, plantea la ecuación en función de `y3` y resuelve `y3` (para `Q3 = 5 m³/s` entrega `y3 = 1.0431 m`).
+  2. **Inciso a):** Con `y2`, calcula `A2`, `P2`, `R2`, `Z2` y obtiene `Q2 = K · Z2` (ej. para `y2 = 0.75 m` entrega `Q2 = 2.7294 m³/s`).
+  3. **Inciso b):** Con `Q3`, halla `Z3 = Q3 / K`, plantea la ecuación en función de `y3` y resuelve `y3` (ej. para `Q3 = 5 m³/s` entrega `y3 = 1.0431 m`).
 
 <br>
 
@@ -207,22 +207,22 @@ Diseña la sección transversal completa de un canal (`b`, `y`, borde libre `BL`
 
 | Opción | Método de diseño | Datos que pide |
 |--------|------------------|----------------|
-| **1. Vel. Max. Permisible (Punto 3)** | **Método de la velocidad máxima permisible (Guía PDF 1):** diseña un canal erosionable sin superar `Vmax`, verifica Froude y Manning | Sistema de unidades (`1` = SI en m, `2` = Inglés en ft), `Q`, `Vmax`, `n`, `S0`, talud `z` |
-| **2. Secc. Hidr. Optima (Punto 4)** | **Método de la sección hidráulicamente óptima (máxima eficiencia):** minimiza el perímetro mojado cumpliendo `R = y / 2`, verifica Froude y Manning | `Q` (m³/s), `n`, `S0`, talud `z` (`0` = rectangular óptimo, `-1` = trapezoidal con talud óptimo `z = 1/√3`, `> 0` = talud fijo) |
+| **1. Vel. Max. Permisible** | **Método de la velocidad máxima permisible (Guía PDF 1):** diseña un canal erosionable sin superar `Vmax`, verifica Froude y Manning | Sistema de unidades (`1` = SI en m, `2` = Inglés en ft), `Q`, `Vmax`, `n`, `S0`, talud `z` |
+| **2. Secc. Hidr. Optima** | **Método de la sección hidráulicamente óptima (máxima eficiencia):** minimiza el perímetro mojado cumpliendo `R = y / 2`, verifica Froude y Manning | `Q` (m³/s), `n`, `S0`, talud `z` (`0` = rectangular óptimo, `-1` = trapezoidal con talud óptimo `z = 1/√3`, `> 0` = talud fijo) |
 | **3. Fuerza Tractiva (PDF 2)** | **Método del esfuerzo cortante permisible (Guía PDF 2):** diseña por fuerza tractiva en los taludes (`0.76 γ y S0 = K τp`) y verifica el fondo (`γ y S0 ≤ τp`), Froude y Manning | `Q` (m³/s), `n`, `S0`, `m`, esfuerzo admisible `tau_p` (N/m²), ángulo de reposo `phi` (grados; `0` si es cohesivo) y factor de sinuosidad (`0` = 1.0 canal recto) |
 
 **📤 Desarrollo paso a paso que muestra en pantalla**
 
-- **Opción 1 (Punto 3 — Velocidad Máxima Permisible):**
+- **Opción 1 (Velocidad Máxima Permisible):**
   1. Si se eligen unidades inglesas (`ft³/s` y `ft/s`), convierte primero `Q` y `V` al SI (`1 ft = 0.3048 m`) y muestra los resultados en cada paso **tanto en metros (m) como en pies (ft)** (incluyendo una nota con `ku = 1.49` directo en pies).
   2. Calcula `R = (V · n / √S0)^(3/2)` de Manning y `A = Q / V` de continuidad.
   3. Calcula el perímetro mojado `P = A / R`.
-  4. Despeja `b = P - 2y√(1+m²)`, lo sustituye en `A = (b + my)y` para formar la cuadrática `Cm · y² - P · y + A = 0` (con `Cm = 2√(1+m²) - m`), muestra el discriminante, ambas raíces `(y1, b1)` y `(y2, b2)` y selecciona la raíz físicamente válida (`b > 0`). Para el Punto 3 (`Q=74 ft³/s, V=2.80 ft/s, n=0.021, S0=0.0009, m=2.0`) entrega `y = 0.6712 m (2.202 ft)` y `b = 2.3157 m (7.597 ft)`.
+  4. Despeja `b = P - 2y√(1+m²)`, lo sustituye en `A = (b + my)y` para formar la cuadrática `Cm · y² - P · y + A = 0` (con `Cm = 2√(1+m²) - m`), muestra el discriminante, ambas raíces `(y1, b1)` y `(y2, b2)` y selecciona la raíz físicamente válida (`b > 0`). Por ejemplo, para `Q=74 ft³/s, V=2.80 ft/s, n=0.021, S0=0.0009, z=2.0` entrega `y = 0.6712 m (2.202 ft)` y `b = 2.3157 m (7.597 ft)`.
   5. Asigna el borde libre `BL` de la Tabla 9-1 (`BL = 0.75 m`) y calcula `H = y + BL = 1.4212 m (4.663 ft)`.
-- **Opción 2 (Punto 4 — Sección Hidráulicamente Óptima):**
+- **Opción 2 (Sección Hidráulicamente Óptima):**
   1. Obtiene las relaciones óptimas en función de `y`: `b = 2y(√(1+m²) - m) = cb · y`, `A = (2√(1+m²) - m)y² = cA · y²`, `P = 2 cA · y` y `R = y / 2 = 0.5 y`.
   2. Sustituye `A` y `R` en Manning: `(cA · y²)(0.5 y)^(2/3) = (Q · n) / √S0`.
-  3. Despeja `y`, `b`, `A`, `P`, `R` y `V`. Para el Punto 4 (`Q=7 m³/s, n=0.015, S0=0.0006, m=1.25`) entrega `y = 1.5974 m` y `b = 1.1207 m`.
+  3. Despeja `y`, `b`, `A`, `P`, `R` y `V`. Por ejemplo, para `Q=7 m³/s, n=0.015, S0=0.0006, z=1.25` entrega `y = 1.5974 m` y `b = 1.1207 m`.
   4. Suma el borde libre de la Tabla 9-1 (`BL = 0.75 m`) obteniendo `H = 2.3474 m`.
 - **Opción 3 (Guía PDF 2 — Fuerza Tractiva):**
   1. Ajusta `tau_p` por sinuosidad.

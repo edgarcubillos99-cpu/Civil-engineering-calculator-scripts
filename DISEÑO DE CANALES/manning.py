@@ -2,8 +2,8 @@ import math
 
 # Flujo uniforme - Ecuacion de Manning
 # Soluciona Paso a Paso:
-# 1. Ancho b dados Q, n, S0, yn, m (Punto 1 taller)
-# 2. Relacion Q-y sin conocer n ni S0 (Punto 2 taller)
+# 1. Ancho b dados Q, n, S0, yn, m
+# 2. Relacion Q-y sin conocer n ni S0
 # 3. Tirante normal yn dados Q, n, S0, b, m
 # 4. Caudal Q y velocidad V directos
 
@@ -67,8 +67,6 @@ def op_hallar_b():
     print("de un canal en flujo uniforme")
     print("conociendo Q, n, S0, yn y m")
     print("(use m=0 si es rectangular).")
-    print("Ref Pto 1: Q=9, n=0.013,")
-    print("S0=0.0005, yn=1.60, m=0")
     print("--------------------------")
 
     Q = float(input("Caudal Q (m3/s): "))
@@ -146,8 +144,6 @@ def op_relacion_qy():
     print("es constante para todo tirante.")
     print("a) Halla Q2 para una altura y2")
     print("b) Halla y3 para un caudal Q3")
-    print("Ref Pto 2: b=3.0, m=1.5, Q1=10,")
-    print("y1=1.50, y2=0.75, Q3=0 (mitad)")
     print("-------------------------------")
 
     b = float(input("Ancho base b (m): "))
@@ -291,8 +287,8 @@ def op_calcular_q():
 
 def menu():
     print("=== Flujo Uniforme Manning ===")
-    print("1. Hallar b (Punto 1 taller)")
-    print("2. Sin n ni S0 (Punto 2 taller)")
+    print("1. Hallar base b")
+    print("2. Relacion sin n ni S0")
     print("3. Hallar tirante normal yn")
     print("4. Calcular Q y V directo")
 

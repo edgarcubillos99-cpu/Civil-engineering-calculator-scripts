@@ -3,8 +3,8 @@ import math
 # Diseno de canales en flujo uniforme
 # Incluye borde libre (Tabla 9-1 Ranga Raju),
 # numero de Froude y verificacion de Manning:
-# 1. Metodo Velocidad Maxima Permisible (Punto 3 + PDF 1)
-# 2. Metodo Seccion Hidraulicamente Optima (Punto 4 + Rect/Trap optimo)
+# 1. Metodo Velocidad Maxima Permisible (PDF 1)
+# 2. Metodo Seccion Hidraulicamente Optima (Rect/Trap optimo)
 # 3. Metodo Esfuerzo Cortante / Fuerza Tractiva (PDF 2)
 
 FT_A_M = 0.3048
@@ -71,9 +71,6 @@ def op_vel_permisible():
     print("trabaje a la velocidad maxima")
     print("permisible V (Guia PDF 1), y")
     print("verifica Froude y Manning.")
-    print("Ref Pto 3: unid=2 (ft), n=0.021,")
-    print("Q=74 ft3/s, V=2.80 ft/s,")
-    print("z=2.0, S0=0.0009")
     print("-------------------------------")
 
     unid = input("Unidades (1=SI m, 2=ft): ")
@@ -239,8 +236,6 @@ def op_seccion_optima():
     print("- z = -1 -> Trapezoidal con talud")
     print("            optimo z=1/sqrt(3) (60 gr)")
     print("- z > 0  -> Trapezoidal con z fijo")
-    print("Ref Pto 4: n=0.015, Q=7 m3/s,")
-    print("S0=0.0006, z=1.25")
     print("-------------------------------")
 
     Q = float(input("Caudal Q (m3/s): "))

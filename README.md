@@ -7,7 +7,7 @@
 
 <p align="center">
   <img alt="Python" src="https://img.shields.io/badge/MicroPython-Casio%20FX--CG100-blue?logo=python&logoColor=white">
-  <img alt="Scripts" src="https://img.shields.io/badge/scripts-7-success">
+  <img alt="Scripts" src="https://img.shields.io/badge/scripts-10-success">
   <img alt="Temas" src="https://img.shields.io/badge/temas-canales%20%7C%20hidr%C3%A1ulica%20%7C%20estructuras-lightgrey">
 </p>
 
@@ -78,7 +78,7 @@ sync && gio mount -u /media/$USER/disk # expulsar de forma segura
 > [!TIP]
 > Otras notas:
 > - Usa punto decimal (`1.6`, no `1,6`).
-> - Unidades del SI: m, m³/s, m/s (salvo `discanal.py`, que también acepta unidades inglesas ft, ft³/s y ft/s y las convierte automáticamente).
+> - Unidades del SI: m, m³/s, m/s (`discanal.py`, `fgv.py`, `pasodir.py` y `pasoest.py` también aceptan unidades inglesas ft, ft³/s y ft/s).
 > - Los scripts son independientes: puedes llevar solo los que necesites.
 > - La app **Memory** solo muestra 200 archivos por carpeta: ese es el tope práctico de scripts en la raíz.
 
@@ -97,6 +97,9 @@ scripts-para-la-u/
 │   ├── E_espf.py               → versión de nombre corto (8 chars) de E_especifica
 │   ├── manning.py              → flujo uniforme por Manning paso a paso (b, yn, Q y relación Q-y)
 │   ├── discanal.py             → diseño de canales y bordes libres paso a paso (Velocidad Permisible, Sección Óptima y Fuerza Tractiva)
+│   ├── fgv.py                  → flujo gradualmente variado (perfiles M/S/C/H/A, lago-canal y resalto/secuente)
+│   ├── pasodir.py              → método de paso directo (FGV) paso a paso y tabla de perfil
+│   ├── pasoest.py              → método de paso estándar (FGV) por tramos, cotas y ubicación de resalto
 │   ├── guiacan.py              → guía de procedimientos y tablas de diseño (Chow, USACE, Ranga Raju, Gupta, USBR)
 │       ├── fig9_3.csv          → ángulo de reposo vs diámetro de partícula (USBR)
 │       ├── fig9_4.csv          → esfuerzo cortante admisible tau_p vs diámetro en no cohesivos (USBR)
@@ -123,6 +126,9 @@ Nombres de archivo en `snake_case`, en minúsculas, con extensión `.py`.
 | 🌊 Diseño de canales | [`E_especifica.py`](DISEÑO%20DE%20CANALES/E_especifica.py) | Tabla de energía específica `E` frente al tirante `y` (curva E–y) para sección rectangular, trapezoidal, triangular o circular |
 | 🌊 Diseño de canales | [`manning.py`](DISEÑO%20DE%20CANALES/manning.py) | Flujo uniforme con la ecuación de Manning paso a paso: dimensionamiento de base `b`, relación `Q–y` sin conocer `n` ni `S0`, tirante normal `yn` y cálculo directo de `Q` y `V` |
 | 🌊 Diseño de canales | [`discanal.py`](DISEÑO%20DE%20CANALES/discanal.py) | Diseño de canales paso a paso con borde libre: Velocidad Máxima Permisible en SI o ft, Sección Hidráulicamente Óptima y Fuerza Tractiva |
+| 🌊 Diseño de canales | [`fgv.py`](DISEÑO%20DE%20CANALES/fgv.py) | Flujo Gradualmente Variado (FGV) en sección rectangular, trapezoidal o triangular (SI o ft): clasificación de perfiles (`yc`, `yn`, `Sc`, `dy/dx`), problema Lago–Canal (`Eup → Q, yn, yc`) y tirante secuente / resalto hidráulico por función Momentum |
+| 🌊 Diseño de canales | [`pasodir.py`](DISEÑO%20DE%20CANALES/pasodir.py) | Método de Paso Directo (FGV) para canales rectangulares, trapezoidales o triangulares (SI o ft): cálculo detallado paso a paso (`y1 → y2`) o perfil completo en `N` pasos con tabla y distancia acumulada |
+| 🌊 Diseño de canales | [`pasoest.py`](DISEÑO%20DE%20CANALES/pasoest.py) | Método de Paso Estándar (FGV) para canales rectangulares, trapezoidales o triangulares (SI o ft): perfil `y(x)` en `N` tramos de longitud `Δx`, tramo individual con cotas `z1, z2` y ubicación de resalto hidráulico (M3 + M2) |
 | 🌊 Diseño de canales | [`guiacan.py`](DISEÑO%20DE%20CANALES/guiacan.py) | Guía interactiva de procedimientos paso a paso y tablas de consulta: `n` de Manning (Tabla 4-1), bordes libres (Tabla 9-1), taludes (Tabla 9-2), velocidades máximas (Tabla 9-3), limo y esfuerzo cortante (Tabla 9-4 y Figs. 9-3 a 9-5) |
 | 🏛️ Diseño de estructuras | [`barras.py`](DISEÑO%20DE%20ESTRUCTURAS/barras.py) | Consulta de barras ASTM y configuración económica de refuerzo a flexión: cubre el `As` mínimo con el menor peso |
 | 🏛️ Diseño de estructuras | [`asdviga.py`](DISEÑO%20DE%20ESTRUCTURAS/asdviga.py) | Viga rectangular por ASD: `As` (Viète), sección económica, revisión, capacidad `Mr` y `w` de viga simple |
@@ -238,6 +244,47 @@ Diseña la sección transversal completa de un canal (`b`, `y`, borde libre `BL`
   3. Iguala `0.76 · γ · y · S0 = tau_p(lados)` (con `γ = 9810 N/m³`) y despeja `y`.
   4. Con `y` fijo, despeja `b` de la ecuación de Manning.
   5. Verifica que en el fondo `tau_fondo = γ · y · S0 ≤ tau_p` y añade `BL` de la Tabla 9-1.
+
+<br>
+
+### 🌊 `fgv.py` — Flujo Gradualmente Variado (Perfiles, Lago–Canal y Resalto)
+
+Herramienta paso a paso para problemas de **Flujo Gradualmente Variado (FGV)** en canales **rectangulares (`z = 0`)**, **trapezoidales (`b > 0, z > 0`)** o **triangulares (`b = 0, z > 0`)**, en **SI (`m`)** o **Inglés (`ft`, `Cm = 1.49`, `g = 32.2`)**.
+
+**📥 Opciones del menú y datos que pide**
+
+| Opción | Qué resuelve | Datos que pide |
+|--------|--------------|----------------|
+| **1. Clasificar perfil** | Halla `yc`, `yn`, pendiente crítica `Sc`, tipo de pendiente (`M`, `S`, `C`, `H`, `A`), perfil (`M1..A3`), `dy/dx` y sentido de cálculo | Unidades (`1`=SI, `2`=ft), `b`, `z`, `Q`, `n`, `S0` (acepta `≤ 0`), tirante `y` (`0` para omitir) |
+| **2. Problema Lago–Canal** | Determina `Q`, `yn` y `yc` conocida la energía del lago `Eup` sobre la solera de entrada; verifica si el canal es suave (`yn > yc`, perfil M) o de control crítico en la entrada (`yn ≤ yc`, perfil S2) | Unidades, `b`, `z`, `n`, `S0`, energía del lago `Eup` |
+| **3. Tirante secuente / Resalto** | Calcula el tirante conjugado `y2` mediante la función Momentum `M = Q²/(gA) + ȳA` (válida para rect, trap y triang; muestra también Belanger si es rectangular) y la pérdida de energía `ΔE` | Unidades, `b`, `z`, `Q`, tirante conocido `y1` (supercrítico o subcrítico) |
+
+<br>
+
+### 🌊 `pasodir.py` — Método de Paso Directo (FGV)
+
+Calcula la distancia `Δx` entre tirantes conocidos integrando `Δx = (E2 − E1) / (S0 − Sfm)` con `Sfm = (Sf1 + Sf2) / 2` para secciones **rectangulares**, **trapezoidales** o **triangulares** (SI o Inglés).
+
+**📥 Opciones del menú y datos que pide**
+
+| Opción | Qué resuelve | Datos que pide |
+|--------|--------------|----------------|
+| **1. Un paso detallado (`y1 → y2`)** | Muestra el desarrollo completo de un solo tramo (`A`, `P`, `R`, `V`, `E`, `Sf`, `ΔE`, `Sfm`, `S0 − Sfm` y `Δx` con sentido) | Unidades, `b`, `z`, `Q`, `n`, `S0`, `y1`, `y2` |
+| **2. Perfil completo (`N` pasos)** | Recorre desde `y_ini` hasta `y_fin` en `N` incrementos iguales `Δy`, mostrando tabla resumen o detalle paso a paso con pausa `[Enter]` y longitud acumulada `x` | Unidades, `b`, `z`, `Q`, `n`, `S0`, `y_ini`, `y_fin`, `N`, modo (`1`=Tabla, `2`=Detalle) |
+
+<br>
+
+### 🌊 `pasoest.py` — Método de Paso Estándar (FGV)
+
+Calcula el tirante desconocido `y(x)` a distancias conocidas `Δx` resolviendo la ecuación de energía `z2 + y2 + V2²/(2g) = z1 + y1 + V1²/(2g) − Sfm · Δx` sobre la rama del régimen correspondiente (subcrítico o supercrítico) en secciones **rectangulares**, **trapezoidales** o **triangulares** (SI o Inglés).
+
+**📥 Opciones del menú y datos que pide**
+
+| Opción | Qué resuelve | Datos que pide |
+|--------|--------------|----------------|
+| **1. Perfil en `N` tramos (`Δx, S0`)** | Calcula `y(x)` y `H(x)` a lo largo de una longitud `L` dividida en `N` tramos (aguas abajo o aguas arriba), en modo tabla o detallado con verificación `H2 = H1 − hf` | Unidades, `b`, `z`, `Q`, `n`, `S0`, `y1`, `L`, `N`, sentido, cota inicial `z0`, modo |
+| **2. Un tramo con cotas (`z1, z2`)** | Resuelve un tramo individual dadas las cotas de fondo `z1`, `z2` y la distancia `L`, mostrando `S0`, `H1`, `y2`, `Sf1`, `Sf2`, `Sfm` y la verificación de energía | Unidades, `b`, `z`, `Q`, `n`, `z1`, `z2`, `L`, sentido, `y1` |
+| **3. Ubicar resalto (`M3 + M2` en `L`)** | Calcula el perfil supercrítico aguas abajo (desde `x = 0`), su curva de tirantes secuentes `y_seq` y el perfil subcrítico aguas arriba (desde `x = L`), e interpola el punto exacto `x` del resalto hidráulico | Unidades, `b`, `z`, `Q`, `n`, `S0`, `L`, `y0` (`< yc`), `yL` (`0` = caída libre `yc`), `N` |
 
 <br>
 
